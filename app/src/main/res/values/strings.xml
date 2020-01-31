@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Popular Movies</string>
+    <string name="content_description_item_movies">Item Image</string>
+    <string name="sort">Sort</string>
+</resources>
