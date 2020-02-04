@@ -15,6 +15,6 @@
     <string name="releaseLabel">Released: %s</string>
     <string name="ratingLabel">Vote Average: %s</string>
     <string name="error_on_movie_fetch">Movie information lost!</string>
-    <string name="error_message">A network error just ocurred, please verify your internet connection and try again</string>
+    <string name="error_message">A network error just occurred, please verify your internet connection and try again</string>
     <string name="lbl_refresh">Refresh</string>
 </resources>
