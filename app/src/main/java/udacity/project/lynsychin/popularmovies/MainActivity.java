@@ -12,6 +12,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -32,6 +33,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnMo
 
     private ProgressBar mPbLoading;
     private RecyclerView mRecyclerViewMovies;
+    private TextView mTvErrorMessage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +45,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnMo
         mCurrentSort = getString(R.string.sort_popular);
 
         mPbLoading = findViewById(R.id.pbLoading);
+        mTvErrorMessage = findViewById(R.id.tvErrorMessage);
 
         mRecyclerViewMovies = findViewById(R.id.rvMovies);
         RecyclerView.LayoutManager layoutManager = new GridLayoutManager(this, 3);
@@ -51,7 +54,6 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnMo
 
         mAdapter = new MovieAdapter(MainActivity.this, this);
         mRecyclerViewMovies.setAdapter(mAdapter);
-        hideList();
     }
 
     @Override
@@ -76,6 +78,9 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnMo
             mCurrentSort = getString(R.string.sort_top_rated);
             updateMovies();
             return true;
+        } else if(item.getItemId() == R.id.action_refresh){
+            hideErrorMessage();
+            updateMovies();
         }
         return super.onOptionsItemSelected(item);
     }
@@ -88,6 +93,16 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnMo
     private void hideList(){
         mPbLoading.setVisibility(View.VISIBLE);
         mRecyclerViewMovies.setVisibility(View.GONE);
+    }
+
+    private void displayErrorMessage(){
+        mRecyclerViewMovies.setVisibility(View.GONE);
+        mTvErrorMessage.setVisibility(View.VISIBLE);
+    }
+
+    private void hideErrorMessage(){
+        mRecyclerViewMovies.setVisibility(View.VISIBLE);
+        mTvErrorMessage.setVisibility(View.GONE);
     }
 
     private void updateMovies(){
@@ -110,6 +125,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnMo
             public void onFailure(@NonNull Call<MovieDB> call, @NonNull Throwable t) {
                 call.cancel();
                 displayList();
+                displayErrorMessage();
             }
         });
     }
