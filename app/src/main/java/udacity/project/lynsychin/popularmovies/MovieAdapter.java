@@ -4,20 +4,36 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.squareup.picasso.Picasso;
+
 import java.util.ArrayList;
+import java.util.List;
+
+import udacity.project.lynsychin.popularmovies.model.Movie;
 
 public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHolder> {
 
     private Context mContext;
-    private ArrayList<String> mData = new ArrayList<>();
+    private List<Movie> mData = new ArrayList<>();
+    private OnMovieAdapterListener mListener;
 
-    public MovieAdapter(Context context, ArrayList<String> data){
-        mData = data;
+    interface OnMovieAdapterListener {
+        void onMovieSelected(Movie movie);
+    }
+
+    MovieAdapter(Context context, OnMovieAdapterListener listener){
         mContext = context;
+        mListener = listener;
+    }
+
+    void setData(List<Movie> data){
+        mData = data;
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -29,7 +45,11 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
 
     @Override
     public void onBindViewHolder(@NonNull MovieViewHolder holder, int position) {
+        Movie movie = mData.get(position);
 
+        Picasso.get()
+                .load(mContext.getString(R.string.base_url_poster_path) + movie.getPosterPath())
+                .into(holder.posterImage);
     }
 
     @Override
@@ -37,11 +57,21 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
         return mData.size();
     }
 
-    class MovieViewHolder extends RecyclerView.ViewHolder {
+    class MovieViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+        ImageView posterImage;
 
-        public MovieViewHolder(View view){
+        private MovieViewHolder(View view){
             super(view);
 
+            posterImage = view.findViewById(R.id.posterImage);
+            itemView.setOnClickListener(this);
+        }
+
+        @Override
+        public void onClick(View v) {
+            if(mListener != null){
+                mListener.onMovieSelected(mData.get(getAdapterPosition()));
+            }
         }
     }
 

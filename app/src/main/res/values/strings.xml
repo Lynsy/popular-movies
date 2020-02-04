@@ -1,5 +1,18 @@
 <resources>
     <string name="app_name">Popular Movies</string>
     <string name="content_description_item_movies">Item Image</string>
+    <string name="demo_plot">The near future, a time when both hope and hardships drive humanity to look to the stars and beyond. While a mysterious phenomenon menaces to destroy life on planet Earth, astronaut Roy McBride undertakes a mission across the immensity of space and its many perils to uncover the truth about a lost expedition that decades before boldly faced emptiness and silence in search of the unknown.</string>
     <string name="sort">Sort</string>
+    <!-- TODO: Add Api key here, please. -->
+    <string name="API_KEY"></string>
+
+    <string name="base_url_poster_path">https://image.tmdb.org/t/p/w185/</string>
+    <string name="base_url_poster_path_large">https://image.tmdb.org/t/p/w500/</string>
+    <string name="sort_popular">popular</string>
+    <string name="sort_top_rated">top_rated</string>
+    <string name="popularity">By Most Popular</string>
+    <string name="top_rated">By Highest Rated</string>
+    <string name="releaseLabel">Released: %s</string>
+    <string name="ratingLabel">Vote Average: %s</string>
+    <string name="error_on_movie_fetch">Movie information lost!</string>
 </resources>
