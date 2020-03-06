@@ -14,16 +14,17 @@ import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 import java.util.List;
 
+import udacity.project.lynsychin.popularmovies.database.MovieEntry;
 import udacity.project.lynsychin.popularmovies.model.Movie;
 
 public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHolder> {
 
     private Context mContext;
-    private List<Movie> mData = new ArrayList<>();
+    private List<MovieEntry> mData = new ArrayList<>();
     private OnMovieAdapterListener mListener;
 
     interface OnMovieAdapterListener {
-        void onMovieSelected(Movie movie);
+        void onMovieSelected(MovieEntry movie);
     }
 
     MovieAdapter(Context context, OnMovieAdapterListener listener){
@@ -31,7 +32,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
         mListener = listener;
     }
 
-    void setData(List<Movie> data){
+    void setData(List<MovieEntry> data){
         mData = data;
         notifyDataSetChanged();
     }
@@ -45,7 +46,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
 
     @Override
     public void onBindViewHolder(@NonNull MovieViewHolder holder, int position) {
-        Movie movie = mData.get(position);
+        MovieEntry movie = mData.get(position);
 
         Picasso.get()
                 .load(mContext.getString(R.string.base_url_poster_path) + movie.getPosterPath())
