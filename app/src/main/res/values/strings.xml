@@ -16,6 +16,8 @@
     <string name="popularity">By Most Popular</string>
     <string name="top_rated">By Highest Rated</string>
     <string name="favorite">By Favorite</string>
+    <string name="mark_favorite">Mark as Favorite</string>
+    <string name="mark_unfavorite">Remove as Favorite</string>
     <string name="releaseLabel">Released: %s</string>
     <string name="ratingLabel">Vote Average: %s</string>
     <string name="error_on_movie_fetch">Movie information lost!</string>

@@ -1,7 +1,6 @@
 package udacity.project.lynsychin.popularmovies.view_model;
 
 import android.app.Application;
-import android.util.Log;
 
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;

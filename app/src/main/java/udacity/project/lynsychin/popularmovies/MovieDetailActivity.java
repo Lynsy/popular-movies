@@ -1,11 +1,18 @@
 package udacity.project.lynsychin.popularmovies;
 
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModelProviders;
 
 import com.squareup.picasso.Picasso;
 
@@ -14,38 +21,103 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import udacity.project.lynsychin.popularmovies.database.MovieDatabase;
+import udacity.project.lynsychin.popularmovies.database.MovieEntry;
 import udacity.project.lynsychin.popularmovies.model.Movie;
+import udacity.project.lynsychin.popularmovies.view_model.MainViewModel;
+import udacity.project.lynsychin.popularmovies.view_model.MovieDetailViewModel;
+import udacity.project.lynsychin.popularmovies.view_model.MovieDetailViewModelFactory;
 
 public class MovieDetailActivity extends AppCompatActivity {
+
+    public static final String EXTRA_MOVIE_ID = "extraTaskId";
+    private static final int DEFAULT_MOVIE_ID = -1;
+
+    private MovieDatabase mDB;
+    private int mMovieId = DEFAULT_MOVIE_ID;
+
+    private boolean isFavorite = false;
+
+    private ImageView mIVPoster;
+    private TextView mTVReleaseDate;
+    private TextView mTVRating;
+    private TextView mTVTitle;
+    private TextView mTVPlot;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movie_detail);
 
-        ImageView ivPoster = findViewById(R.id.detailMoviePoster);
-        TextView tvReleaseDate = findViewById(R.id.detailMovieReleaseDate);
-        TextView tvRating = findViewById(R.id.detailMovieRating);
-        TextView tvTitle = findViewById(R.id.detailMovieTitle);
-        TextView tvPlot = findViewById(R.id.detailMoviePlot);
+        initializeLayout();
 
-        Movie selectedMovie;
-        if(getIntent().hasExtra("movie")){
-            selectedMovie = (Movie) getIntent().getSerializableExtra("movie");
+        mDB = MovieDatabase.getInstance(this);
 
-            tvTitle.setText(selectedMovie.getTitle());
+        if(getIntent().hasExtra(EXTRA_MOVIE_ID)){
+            mMovieId = getIntent().getIntExtra(EXTRA_MOVIE_ID, DEFAULT_MOVIE_ID);
 
-            Picasso.get()
-                    .load(getString(R.string.base_url_poster_path_large) + selectedMovie.getPosterPath())
-                    .into(ivPoster);
+            MovieDetailViewModelFactory factory = new MovieDetailViewModelFactory(mDB, mMovieId);
 
-            tvReleaseDate.setText(getString(R.string.releaseLabel, parseDateFormat(selectedMovie.getReleaseDate())));
-            tvRating.setText(getString(R.string.ratingLabel, String.valueOf(selectedMovie.getVote_average())));
-            tvPlot.setText(selectedMovie.getOverview());
+            final MovieDetailViewModel viewModel = new ViewModelProvider(this, factory).get(MovieDetailViewModel.class);
+            viewModel.getMovie().observe(MovieDetailActivity.this, new Observer<MovieEntry>() {
+                @Override
+                public void onChanged(MovieEntry movieEntry) {
+                    viewModel.getMovie().removeObserver(this);
+                    populateUI(movieEntry);
+                }
+            });
         } else {
-            tvPlot.setText(getString(R.string.error_on_movie_fetch));
+            // TODO: Put a nicer empty/error message
+            mTVPlot.setText(getString(R.string.error_on_movie_fetch));
         }
 
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.detail, menu);
+
+        MenuItem markAsFav = menu.findItem(R.id.action_mark_favorite);
+
+        if(isFavorite){
+            markAsFav.setIcon(R.drawable.ic_star_24dp);
+        } else {
+            markAsFav.setIcon(R.drawable.ic_star_border_24dp);
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if(item.getItemId() == R.id.action_mark_favorite){
+            Toast.makeText(this, "Under Construction", Toast.LENGTH_SHORT).show();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void initializeLayout(){
+        mIVPoster = findViewById(R.id.detailMoviePoster);
+        mTVReleaseDate = findViewById(R.id.detailMovieReleaseDate);
+        mTVRating = findViewById(R.id.detailMovieRating);
+        mTVTitle = findViewById(R.id.detailMovieTitle);
+        mTVPlot = findViewById(R.id.detailMoviePlot);
+    }
+
+    private void populateUI(MovieEntry movie){
+        mTVTitle.setText(movie.getTitle());
+
+        Picasso.get()
+                .load(getString(R.string.base_url_poster_path_large) + movie.getPosterPath())
+                .into(mIVPoster);
+
+        mTVReleaseDate.setText(getString(R.string.releaseLabel, parseDateFormat(movie.getReleaseDate())));
+        mTVRating.setText(getString(R.string.ratingLabel, String.valueOf(movie.getVote_average())));
+        mTVPlot.setText(movie.getOverview());
+
+        isFavorite = movie.isFavorite();
     }
 
     /**

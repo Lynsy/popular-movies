@@ -66,7 +66,7 @@ public class MovieEntry {
         this.vote_average = movie.getVote_average();
         this.overview = movie.getOverview();
         this.releaseDate = movie.getReleaseDate();
-        this.favorite = true;
+        this.favorite = false;
     }
 
     public int getId() {

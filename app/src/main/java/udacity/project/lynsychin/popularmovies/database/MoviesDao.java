@@ -22,7 +22,11 @@ public interface MoviesDao {
     @Update(onConflict = OnConflictStrategy.REPLACE)
     void updateMovie(MovieEntry movieEntry);
 
+    // Using this to verify if movie is already in DB
     @Query("SELECT * FROM movie WHERE id = :id")
     MovieEntry loadMovieById(int id);
+
+    @Query("SELECT * FROM movie WHERE id = :id")
+    LiveData<MovieEntry> getMovieById(int id);
 
 }
