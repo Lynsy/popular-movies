@@ -1,4 +1,4 @@
-package udacity.project.lynsychin.popularmovies;
+package udacity.project.lynsychin.popularmovies.adapter;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -14,8 +14,8 @@ import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 import java.util.List;
 
+import udacity.project.lynsychin.popularmovies.R;
 import udacity.project.lynsychin.popularmovies.database.MovieEntry;
-import udacity.project.lynsychin.popularmovies.model.Movie;
 
 public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHolder> {
 
@@ -23,18 +23,22 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
     private List<MovieEntry> mData = new ArrayList<>();
     private OnMovieAdapterListener mListener;
 
-    interface OnMovieAdapterListener {
+    public interface OnMovieAdapterListener {
         void onMovieSelected(MovieEntry movie);
     }
 
-    MovieAdapter(Context context, OnMovieAdapterListener listener){
+    public MovieAdapter(Context context, OnMovieAdapterListener listener){
         mContext = context;
         mListener = listener;
     }
 
-    void setData(List<MovieEntry> data){
+    public void setData(List<MovieEntry> data){
         mData = data;
         notifyDataSetChanged();
+    }
+
+    public List<MovieEntry> getData() {
+        return mData;
     }
 
     @NonNull

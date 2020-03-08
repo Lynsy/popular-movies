@@ -2,28 +2,31 @@ package udacity.project.lynsychin.popularmovies;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import udacity.project.lynsychin.popularmovies.database.MovieDatabase;
+import udacity.project.lynsychin.popularmovies.adapter.MovieAdapter;
 import udacity.project.lynsychin.popularmovies.database.MovieEntry;
 import udacity.project.lynsychin.popularmovies.model.Movie;
 import udacity.project.lynsychin.popularmovies.model.MovieDB;
@@ -31,9 +34,10 @@ import udacity.project.lynsychin.popularmovies.network.APIClient;
 import udacity.project.lynsychin.popularmovies.network.APIInterface;
 import udacity.project.lynsychin.popularmovies.view_model.MainViewModel;
 
-public class MainActivity extends AppCompatActivity implements MovieAdapter.OnMovieAdapterListener {
+public class MainActivity extends AppCompatActivity implements MovieAdapter.OnMovieAdapterListener, SwipeRefreshLayout.OnRefreshListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
+    private static final String SORT_TYPE_KEY = "sort_type_key";
 
     private static String mCurrentSort;
     private static boolean fetchFromNetwork = true;
@@ -41,11 +45,12 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnMo
     private MovieAdapter mAdapter;
     private APIInterface mApiInterface;
 
-    private ProgressBar mPbLoading;
+    private SwipeRefreshLayout mSRLMovies;
     private RecyclerView mRecyclerViewMovies;
     private TextView mTvErrorMessage;
 
     private MainViewModel mMainViewModel;
+    private SharedPreferences mSharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,8 +62,10 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnMo
 
         mCurrentSort = getString(R.string.sort_popular);
 
-        mPbLoading = findViewById(R.id.pbLoading);
         mTvErrorMessage = findViewById(R.id.tvErrorMessage);
+
+        mSRLMovies = findViewById(R.id.srlMovies);
+        mSRLMovies.setOnRefreshListener(this);
 
         mRecyclerViewMovies = findViewById(R.id.rvMovies);
         RecyclerView.LayoutManager layoutManager = new GridLayoutManager(this, 3);
@@ -69,6 +76,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnMo
         mRecyclerViewMovies.setAdapter(mAdapter);
 
         setViewModel();
+        setupSharedPreferences();
     }
 
     @Override
@@ -88,21 +96,24 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnMo
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        List<MovieEntry> movies = mAdapter.getData();
         if(item.getItemId() == R.id.action_popular){
-            mMainViewModel.updateSelectedSort(getString(R.string.sort_local_popularity));
+            mCurrentSort = getString(R.string.sort_popular);
+            saveSortingPreferences();
+            sortMovies(movies);
             return true;
         } else if(item.getItemId() == R.id.action_topRated){
-            mMainViewModel.updateSelectedSort(getString(R.string.sort_local_highest_rated));
+            mCurrentSort = getString(R.string.sort_top_rated);
+            saveSortingPreferences();
+            sortMovies(movies);
             return true;
         } else if(item.getItemId() == R.id.action_favorite){
-            // TODO: Add new category for favorite
-            // Update by highest_rating for all movies marked as favorite
-            // Or movies marked as favorite on top...
-
-            Toast.makeText(this, "Under Construction", Toast.LENGTH_SHORT).show();
+            mCurrentSort = getString(R.string.sort_local_favorite);
+            saveSortingPreferences();
+            sortMovies(movies);
+            return true;
         }
 
-        // TODO: Refresh list
         return super.onOptionsItemSelected(item);
     }
 
@@ -111,22 +122,36 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnMo
             @Override
             public void onChanged(List<MovieEntry> movieEntries) {
                 Log.d(TAG, "Loading from Database...");
-                mAdapter.setData(movieEntries);
+                sortMovies(movieEntries);
             }
         });
     }
 
+    private void setupSharedPreferences() {
+        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        mCurrentSort = mSharedPreferences.getString(SORT_TYPE_KEY, getString(R.string.sort_popular));
+    }
+
+    private void saveSortingPreferences(){
+        if(mSharedPreferences != null) {
+            SharedPreferences.Editor editor = mSharedPreferences.edit();
+            editor.putString(SORT_TYPE_KEY, mCurrentSort);
+            editor.apply();
+        }
+    }
+
     private void displayList(){
-        mPbLoading.setVisibility(View.GONE);
+        mSRLMovies.setRefreshing(false);
         mRecyclerViewMovies.setVisibility(View.VISIBLE);
     }
 
     private void hideList(){
-        mPbLoading.setVisibility(View.VISIBLE);
+        mSRLMovies.setRefreshing(true);
         mRecyclerViewMovies.setVisibility(View.GONE);
     }
 
     private void displayErrorMessage(String error_message){
+        mSRLMovies.setRefreshing(false);
         mRecyclerViewMovies.setVisibility(View.GONE);
         mTvErrorMessage.setVisibility(View.VISIBLE);
 
@@ -138,10 +163,42 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnMo
         mTvErrorMessage.setVisibility(View.GONE);
     }
 
-    // Should now call the API to insert new movies into the local db
+    private void sortMovies(List<MovieEntry> movies){
+        if(mCurrentSort.equals(getString(R.string.sort_popular))){
+            Collections.sort(movies, new Comparator<MovieEntry>() {
+                @Override
+                public int compare(MovieEntry m1, MovieEntry m2) {
+                    return Double.compare(m2.getPopularity(), m1.getPopularity());
+                }
+            });
+        } else if(mCurrentSort.equals(getString(R.string.sort_top_rated))){
+            Collections.sort(movies, new Comparator<MovieEntry>() {
+                @Override
+                public int compare(MovieEntry m1, MovieEntry m2) {
+                    return Double.compare(m2.getVote_average(), m1.getVote_average());
+                }
+            });
+        } else {
+            Collections.sort(movies, new Comparator<MovieEntry>() {
+                @Override
+                public int compare(MovieEntry m1, MovieEntry m2) {
+                    return Boolean.compare(m2.isFavorite(), m1.isFavorite());
+                }
+            });
+        }
+
+        mAdapter.setData(movies);
+    }
+
     private void updateMovies(){
         hideList();
-        Call<MovieDB> call = mApiInterface.getMovies(mCurrentSort, getString(R.string.API_KEY));
+        hideErrorMessage();
+
+        String currentSort = mCurrentSort;
+
+        if(currentSort.equals(getString(R.string.sort_local_favorite))) currentSort = getString(R.string.sort_popular);
+
+        Call<MovieDB> call = mApiInterface.getMovies(currentSort, getString(R.string.API_KEY));
         call.enqueue(new Callback<MovieDB>() {
             @Override
             public void onResponse(@NonNull Call<MovieDB> call, @NonNull Response<MovieDB> response) {
@@ -160,26 +217,29 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnMo
                             }
                         }
                     });
+
+                    displayList();
+                } else {
+                    if(mAdapter != null && mAdapter.getData().isEmpty()){
+                        displayErrorMessage(getString(R.string.error_message_local_storage));
+                    } else {
+                        displayList();
+                    }
                 }
 
-                displayList();
+
             }
 
             @Override
             public void onFailure(@NonNull Call<MovieDB> call, @NonNull Throwable t) {
                 call.cancel();
-                displayList();
 
-                // TODO: I need to make sure to display an appropriated error message
-                // Scenario 1 : No connection to server (due to internet connectivity issues AND the DB is empty
-                // Display an error to Network problem in the internet
-
-                // If there's a connectivity issue, but there's data in the DB
-                // Display current movies, but display Toast message to update when there's internet.
-
-                //displayErrorMessage(getString(R.string.error_message));
-
-
+                if(mAdapter == null || mAdapter.getData().isEmpty()){
+                    displayErrorMessage(getString(R.string.error_message));
+                } else {
+                    displayList();
+                    Toast.makeText(MainActivity.this, getString(R.string.error_message_no_internet), Toast.LENGTH_LONG).show();
+                }
             }
         });
     }
@@ -189,5 +249,10 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.OnMo
         Intent movieDetailIntent = new Intent(this, MovieDetailActivity.class);
         movieDetailIntent.putExtra(MovieDetailActivity.EXTRA_MOVIE_ID, movie.getId());
         startActivity(movieDetailIntent);
+    }
+
+    @Override
+    public void onRefresh() {
+        updateMovies();
     }
 }

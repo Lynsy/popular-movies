@@ -13,8 +13,8 @@ import java.util.List;
 @Dao
 public interface MoviesDao {
 
-    @Query("SELECT * FROM movie ORDER BY :sort")
-    LiveData<List<MovieEntry>> loadAllMovies(String sort);
+    @Query("SELECT * FROM movie ORDER BY popularity")
+    LiveData<List<MovieEntry>> loadAllMovies();
 
     @Insert
     void insertMovie(MovieEntry movieEntry);

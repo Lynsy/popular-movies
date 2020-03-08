@@ -1,18 +1,18 @@
 package udacity.project.lynsychin.popularmovies;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.os.PersistableBundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.lifecycle.ViewModelProviders;
 
 import com.squareup.picasso.Picasso;
 
@@ -23,18 +23,17 @@ import java.util.Locale;
 
 import udacity.project.lynsychin.popularmovies.database.MovieDatabase;
 import udacity.project.lynsychin.popularmovies.database.MovieEntry;
-import udacity.project.lynsychin.popularmovies.model.Movie;
-import udacity.project.lynsychin.popularmovies.view_model.MainViewModel;
 import udacity.project.lynsychin.popularmovies.view_model.MovieDetailViewModel;
 import udacity.project.lynsychin.popularmovies.view_model.MovieDetailViewModelFactory;
 
-public class MovieDetailActivity extends AppCompatActivity {
+public class MovieDetailActivity extends AppCompatActivity implements View.OnClickListener {
 
-    public static final String EXTRA_MOVIE_ID = "extraTaskId";
+    public static final String EXTRA_MOVIE_ID = "extraMovieId";
+    public static final String EXTRA_MOVIE_TITLE = "extraMovieTitle";
     private static final int DEFAULT_MOVIE_ID = -1;
 
-    private MovieDatabase mDB;
-    private int mMovieId = DEFAULT_MOVIE_ID;
+    private static int mMovieId = DEFAULT_MOVIE_ID;
+    private MovieEntry mMovie;
 
     private boolean isFavorite = false;
 
@@ -43,34 +42,31 @@ public class MovieDetailActivity extends AppCompatActivity {
     private TextView mTVRating;
     private TextView mTVTitle;
     private TextView mTVPlot;
+    private ImageView mOpenTrailer, mOpenReview;
+    private TextView mLblOpenTrailer, mLblOpenReview;
+    private MovieDetailViewModel mViewModel;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_movie_detail);
+        setContentView(R.layout.activity_movie_detail_2);
 
         initializeLayout();
+        setListeners();
+    }
 
-        mDB = MovieDatabase.getInstance(this);
+    @Override
+    protected void onResume() {
+        super.onResume();
 
         if(getIntent().hasExtra(EXTRA_MOVIE_ID)){
             mMovieId = getIntent().getIntExtra(EXTRA_MOVIE_ID, DEFAULT_MOVIE_ID);
-
-            MovieDetailViewModelFactory factory = new MovieDetailViewModelFactory(mDB, mMovieId);
-
-            final MovieDetailViewModel viewModel = new ViewModelProvider(this, factory).get(MovieDetailViewModel.class);
-            viewModel.getMovie().observe(MovieDetailActivity.this, new Observer<MovieEntry>() {
-                @Override
-                public void onChanged(MovieEntry movieEntry) {
-                    viewModel.getMovie().removeObserver(this);
-                    populateUI(movieEntry);
-                }
-            });
+            setViewModel();
+        } else if(mMovieId != DEFAULT_MOVIE_ID) {
+            setViewModel();
         } else {
-            // TODO: Put a nicer empty/error message
             mTVPlot.setText(getString(R.string.error_on_movie_fetch));
         }
-
     }
 
     @Override
@@ -91,11 +87,39 @@ public class MovieDetailActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if(item.getItemId() == R.id.action_mark_favorite){
-            Toast.makeText(this, "Under Construction", Toast.LENGTH_SHORT).show();
+            isFavorite = !isFavorite;
+
+            if(isFavorite){
+                item.setIcon(R.drawable.ic_star_24dp);
+            } else {
+                item.setIcon(R.drawable.ic_star_border_24dp);
+            }
+            
+            AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                @Override
+                public void run() {
+                    mViewModel.updateMovie(isFavorite);
+                }
+            });
+
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void setViewModel(){
+        MovieDatabase db = MovieDatabase.getInstance(this);
+        MovieDetailViewModelFactory factory = new MovieDetailViewModelFactory(db, mMovieId);
+
+        mViewModel = new ViewModelProvider(this, factory).get(MovieDetailViewModel.class);
+        mViewModel.getMovie().observe(MovieDetailActivity.this, new Observer<MovieEntry>() {
+            @Override
+            public void onChanged(MovieEntry movieEntry) {
+                mViewModel.getMovie().removeObserver(this);
+                populateUI(movieEntry);
+            }
+        });
     }
 
     private void initializeLayout(){
@@ -104,9 +128,22 @@ public class MovieDetailActivity extends AppCompatActivity {
         mTVRating = findViewById(R.id.detailMovieRating);
         mTVTitle = findViewById(R.id.detailMovieTitle);
         mTVPlot = findViewById(R.id.detailMoviePlot);
+        mOpenTrailer = findViewById(R.id.openTrailer);
+        mLblOpenTrailer = findViewById(R.id.lblOpenTrailer);
+        mOpenReview = findViewById(R.id.openReviews);
+        mLblOpenReview = findViewById(R.id.lblOpenReview);
+    }
+
+    private void setListeners(){
+        mOpenTrailer.setOnClickListener(this);
+        mLblOpenTrailer.setOnClickListener(this);
+
+        mOpenReview.setOnClickListener(this);
+        mLblOpenReview.setOnClickListener(this);
     }
 
     private void populateUI(MovieEntry movie){
+        mMovie = movie;
         mTVTitle.setText(movie.getTitle());
 
         Picasso.get()
@@ -136,5 +173,22 @@ public class MovieDetailActivity extends AppCompatActivity {
 
         SimpleDateFormat newDateFormat = new SimpleDateFormat("MMMM dd, yyyy", Locale.US);
         return newDateFormat.format(date);
+    }
+
+    @Override
+    public void onClick(View v) {
+        if(v.getId() == R.id.openTrailer || v.getId() == R.id.lblOpenTrailer){
+            // Open Trailer List
+            Intent openTrailersIntent = new Intent(this, TrailerListActivity.class);
+            openTrailersIntent.putExtra(EXTRA_MOVIE_ID, mMovieId);
+            openTrailersIntent.putExtra(EXTRA_MOVIE_TITLE, mTVTitle.getText().toString());
+            startActivity(openTrailersIntent);
+        } else if(v.getId() == R.id.openReviews || v.getId() == R.id.lblOpenReview){
+            // Open Review List
+            Intent openReviewsIntent = new Intent(this, ReviewsActivity.class);
+            openReviewsIntent.putExtra(EXTRA_MOVIE_ID, mMovieId);
+            openReviewsIntent.putExtra(EXTRA_MOVIE_TITLE, mTVTitle.getText().toString());
+            startActivity(openReviewsIntent);
+        }
     }
 }

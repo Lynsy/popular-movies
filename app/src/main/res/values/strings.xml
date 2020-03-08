@@ -3,7 +3,7 @@
     <string name="content_description_item_movies">Item Image</string>
     <string name="demo_plot">The near future, a time when both hope and hardships drive humanity to look to the stars and beyond. While a mysterious phenomenon menaces to destroy life on planet Earth, astronaut Roy McBride undertakes a mission across the immensity of space and its many perils to uncover the truth about a lost expedition that decades before boldly faced emptiness and silence in search of the unknown.</string>
     <string name="sort">Sort</string>
-    <!-- TODO: Add Api key here, please. REMEMBER TO REMOVE THIS API KEY-->
+    <!-- TODO: Add Api key here, please. -->
     <string name="API_KEY"></string>
 
     <string name="base_url_poster_path">https://image.tmdb.org/t/p/w185/</string>
@@ -20,7 +20,17 @@
     <string name="mark_unfavorite">Remove as Favorite</string>
     <string name="releaseLabel">Released: %s</string>
     <string name="ratingLabel">Vote Average: %s</string>
+    <string name="siteLabel">Site: %s</string>
+    <string name="contentLabel">\"%s\"</string>
+    <string name="authorLabel">- %s</string>
     <string name="error_on_movie_fetch">Movie information lost!</string>
     <string name="error_message">A network error just occurred, please verify your internet connection and try again</string>
+    <string name="error_message_local_storage">It seems there\'s no movies to show, and the local storage it\'s empty. Please try again later.</string>
+    <string name="error_message_no_trailers">No trailers found for %s.</string>
+    <string name="error_message_no_reviews">No reviews found for %s.</string>
+    <string name="error_message_no_internet">There was an network error, so we couldn\'t fetch new movies.</string>
     <string name="lbl_refresh">Refresh</string>
+    <string name="lbl_view_trailer">View Trailers</string>
+    <string name="lbl_view_review">View Reviews</string>
+    <string name="description_generic_player_icon">Generic icon for to view a trailer</string>
 </resources>

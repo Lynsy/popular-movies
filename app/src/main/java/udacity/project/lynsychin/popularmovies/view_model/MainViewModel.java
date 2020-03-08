@@ -16,20 +16,14 @@ public class MainViewModel extends AndroidViewModel {
     private static final String TAG = MainViewModel.class.getSimpleName();
 
     private LiveData<List<MovieEntry>> movies;
-    private String selectedSort;
 
     public MainViewModel(Application application){
         super(application);
         MovieDatabase db = MovieDatabase.getInstance(this.getApplication());
-        selectedSort = getApplication().getString(R.string.sort_local_popularity);
-        movies = db.movieDao().loadAllMovies(selectedSort);
+        movies = db.movieDao().loadAllMovies();
     }
 
     public LiveData<List<MovieEntry>> getMovies() { return movies; }
-
-    public void updateSelectedSort(String sort){
-        selectedSort = sort;
-    }
 
     public boolean hasMovie(int id){
         MovieDatabase db = MovieDatabase.getInstance(this.getApplication());
